@@ -1,21 +1,313 @@
-#include <Keyboard.h>
-/* 
-* -------------------------------------------------------------------------
-* Interface Atari ST Keyboard to USB HID Keyboard
-* -------------------------------------------------------------------------
-* Initial idea and some original code provided by user 'joska' of 
-* http://www.atari-forum.com - license unknown
-* -------------------------------------------------------------------------
-* Copyright Kevin Peat 2017
-* kevin@kevinpeat.com
-* My changes and additions are licensed public domain
-* -------------------------------------------------------------------------
-* Developed for use with an Arduino Leonardo as it is able to act directly 
-* as a USB keyboard controller so doesn't require the Arduino firmware to 
-* be modified as some of the other Arduinos (eg. Uno) would do
-* -------------------------------------------------------------------------
-*/
-//#define DEBUG
+#include "Keyboard.h"
+
+class KeyboardUSBHID_ : public Print
+{
+private:
+  KeyReport _keyReport;
+  void sendReport(KeyReport* keys);
+public:
+  KeyboardUSBHID_(void);
+  void begin(void);
+  void end(void);
+  size_t write(uint8_t k);
+  size_t write(const uint8_t *buffer, size_t size);
+  size_t press(uint8_t k);
+  size_t release(uint8_t k);
+  void releaseAll(void);
+};
+extern KeyboardUSBHID_ KeyboardUSBHID;
+
+
+#if defined(_USING_HID)
+
+//================================================================================
+//================================================================================
+//  Keyboard
+
+static const uint8_t _hidReportDescriptor[] PROGMEM = {
+
+  //  Keyboard
+    0x05, 0x01,                    // USAGE_PAGE (Generic Desktop)  // 47
+    0x09, 0x06,                    // USAGE (Keyboard)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0x85, 0x02,                    //   REPORT_ID (2)
+    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
+   
+  0x19, 0xe0,                    //   USAGE_MINIMUM (Keyboard LeftControl)
+    0x29, 0xe7,                    //   USAGE_MAXIMUM (Keyboard Right GUI)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x25, 0x01,                    //   LOGICAL_MAXIMUM (1)
+    0x75, 0x01,                    //   REPORT_SIZE (1)
+    
+  0x95, 0x08,                    //   REPORT_COUNT (8)
+    0x81, 0x02,                    //   INPUT (Data,Var,Abs)
+    0x95, 0x01,                    //   REPORT_COUNT (1)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x81, 0x03,                    //   INPUT (Cnst,Var,Abs)
+    
+  0x95, 0x06,                    //   REPORT_COUNT (6)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x25, 0x73,                    //   LOGICAL_MAXIMUM (115)
+    0x05, 0x07,                    //   USAGE_PAGE (Keyboard)
+    
+  0x19, 0x00,                    //   USAGE_MINIMUM (Reserved (no event indicated))
+    0x29, 0x73,                    //   USAGE_MAXIMUM (Keyboard Application)
+    0x81, 0x00,                    //   INPUT (Data,Ary,Abs)
+    0xc0,                          // END_COLLECTION
+};
+
+KeyboardUSBHID_::KeyboardUSBHID_(void) 
+{
+  static HIDSubDescriptor node(_hidReportDescriptor, sizeof(_hidReportDescriptor));
+  HID().AppendDescriptor(&node);
+}
+
+void KeyboardUSBHID_::begin(void)
+{
+}
+
+void KeyboardUSBHID_::end(void)
+{
+}
+
+void KeyboardUSBHID_::sendReport(KeyReport* keys)
+{
+  HID().SendReport(2,keys,sizeof(KeyReport));
+}
+
+extern
+const uint8_t _asciimapFR[128] PROGMEM;
+
+#define SHIFT 0x80
+const uint8_t _asciimapFR[128] =
+{
+  0x00,             // NUL
+  0x00,             // SOH
+  0x00,             // STX
+  0x00,             // ETX
+  0x00,             // EOT
+  0x00,             // ENQ
+  0x00,             // ACK  
+  0x00,             // BEL
+  0x2a,     // BS Backspace
+  0x2b,     // TAB  Tab
+  0x28,     // LF Enter
+  0x00,             // VT 
+  0x00,             // FF 
+  0x00,             // CR 
+  0x00,             // SO 
+  0x00,             // SI 
+  0x00,             // DEL
+  0x00,             // DC1
+  0x00,             // DC2
+  0x00,             // DC3
+  0x00,             // DC4
+  0x00,             // NAK
+  0x00,             // SYN
+  0x00,             // ETB
+  0x00,             // CAN
+  0x00,             // EM 
+  0x00,             // SUB
+  0x00,             // ESC
+  0x00,             // FS 
+  0x00,             // GS 
+  0x00,             // RS 
+  0x00,             // US 
+
+  0x2c,      //  ' '
+  0x1e|SHIFT,    // !
+  0x34|SHIFT,    // "
+  0x20|SHIFT,    // #
+  0x21|SHIFT,    // $
+  0x22|SHIFT,    // %
+  0x24|SHIFT,    // &
+  0x34,          // '
+  0x26|SHIFT,    // (
+  0x27|SHIFT,    // )
+  0x25|SHIFT,    // *
+  0x2e|SHIFT,    // +
+  0x36,          // ,
+  0x2d,          // -
+  0x37,          // .
+  0x38,          // /
+  0x27,          // 0
+  0x1e,          // 1
+  0x1f,          // 2
+  0x20,          // 3
+  0x21,          // 4
+  0x22,          // 5
+  0x23,          // 6
+  0x24,          // 7
+  0x25,          // 8
+  0x26,          // 9
+  0x33|SHIFT,      // :
+  0x33,          // ;
+  0x36|SHIFT,      // <
+  0x2e,          // =
+  0x37|SHIFT,      // >
+  0x38|SHIFT,      // ?
+  0x1f|SHIFT,      // @
+  0x04|SHIFT,      // A
+  0x05|SHIFT,      // B
+  0x06|SHIFT,      // C
+  0x07|SHIFT,      // D
+  0x08|SHIFT,      // E
+  0x09|SHIFT,      // F
+  0x0a|SHIFT,      // G
+  0x0b|SHIFT,      // H
+  0x0c|SHIFT,      // I
+  0x0d|SHIFT,      // J
+  0x0e|SHIFT,      // K
+  0x0f|SHIFT,      // L
+  0x10|SHIFT,      // M
+  0x11|SHIFT,      // N
+  0x12|SHIFT,      // O
+  0x13|SHIFT,      // P
+  0x14|SHIFT,      // Q
+  0x15|SHIFT,      // R
+  0x16|SHIFT,      // S
+  0x17|SHIFT,      // T
+  0x18|SHIFT,      // U
+  0x19|SHIFT,      // V
+  0x1a|SHIFT,      // W
+  0x1b|SHIFT,      // X
+  0x1c|SHIFT,      // Y
+  0x1d|SHIFT,      // Z
+  0x2f,          // [
+  0x31,          // bslash
+  0x30,          // ]
+  0x23|SHIFT,    // ^
+  0x2d|SHIFT,    // _
+  0x35,          // `
+  0x04,          // a
+  0x05,          // b
+  0x06,          // c
+  0x07,          // d
+  0x08,          // e
+  0x09,          // f
+  0x0a,          // g
+  0x0b,          // h
+  0x0c,          // i
+  0x0d,          // j
+  0x0e,          // k
+  0x0f,          // l
+  0x10,          // m
+  0x11,          // n
+  0x12,          // o
+  0x13,          // p
+  0x14,          // q
+  0x15,          // r
+  0x16,          // s
+  0x17,          // t
+  0x18,          // u
+  0x19,          // v
+  0x1a,          // w
+  0x1b,          // x
+  0x1c,          // y
+  0x1d,          // z
+  0x2f|SHIFT,    // {
+  0x31|SHIFT,    // |
+  0x30|SHIFT,    // }
+  0x35|SHIFT,    // ~
+  0       // DEL
+};
+
+
+uint8_t USBPutChar(uint8_t c);
+
+//
+// Byte 0: Keyboard modifier bits (SHIFT, ALT, CTRL etc)
+// Byte 1: reserved
+// Byte 2-7: Up to six keyboard usage indexes representing the keys that are 
+//           currently "pressed". 
+//           Order is not important, a key is either pressed (present in the 
+//           buffer) or not pressed.
+//
+// modifier (bit 0 is L CTRL, bit 1 is L SHIFT, bit 2 is L ALT, bit 3 is L GUI,
+//           bit 4 is R CTRL, bit 5 is R SHIFT, bit 6 is R ALT, and bit 7 is R GUI)
+//
+#define USBHID_LCRTL 0x01
+#define USBHID_LSHIFT 0x02
+#define USBHID_LALT 0x04
+#define USBHID_LGUI 0x08
+#define USBHID_RCRTL 0x10
+#define USBHID_RSHIFT 0x20
+#define USBHID_RALT 0x40
+#define USBHID_RGUI 0x80
+
+size_t KeyboardUSBHID_::press(uint8_t k)
+{
+  if ((k >= 0xe0) && (k <= 0xe7)) {
+    _keyReport.modifiers |= (1<<(k&0x0f));
+    k = 0;
+  }
+  // Add k to the key report only if it's not already present
+  // and if there is an empty slot.
+  if (_keyReport.keys[0] != k && _keyReport.keys[1] != k && 
+    _keyReport.keys[2] != k && _keyReport.keys[3] != k &&
+    _keyReport.keys[4] != k && _keyReport.keys[5] != k) {
+
+    int i;
+    for (i=0; i<6; i++) {
+      if (_keyReport.keys[i] == 0x00) {
+        _keyReport.keys[i] = k;
+        break;
+      }
+    }
+    if (i == 6) {
+      return 0;
+    } 
+  }
+  sendReport(&_keyReport);
+  return 1;
+}
+
+size_t KeyboardUSBHID_::release(uint8_t k) 
+{
+  if ((k >= 0xe0) && (k <= 0xe7)) {
+    _keyReport.modifiers &= ~(1<<(k&0x0f));
+    k = 0;
+  }
+  // Test the key report to see if k is present.  Clear it if it exists.
+  // Check all positions in case the key is present more than once (which it shouldn't be)
+  for (int i=0; i<6; i++) {
+    if (0 != k && _keyReport.keys[i] == k) {
+      _keyReport.keys[i] = 0x00;
+    }
+  }
+  sendReport(&_keyReport);
+  return 1;
+}
+
+void KeyboardUSBHID_::releaseAll(void)
+{
+  _keyReport.keys[0] = 0;
+  _keyReport.keys[1] = 0; 
+  _keyReport.keys[2] = 0;
+  _keyReport.keys[3] = 0; 
+  _keyReport.keys[4] = 0;
+  _keyReport.keys[5] = 0; 
+  _keyReport.modifiers = 0;
+  sendReport(&_keyReport);
+}
+
+size_t KeyboardUSBHID_::write(uint8_t c)
+{
+  // unimplemented
+  return 0;
+}
+
+size_t KeyboardUSBHID_::write(const uint8_t *buffer, size_t size) {
+  // unimplemented
+  return 0;
+}
+
+KeyboardUSBHID_ KeyboardUSBHID;
+
+#endif
+
+
 
 // ST keyboard reset pin
 const int ST_KB_RESET = 4;
@@ -27,38 +319,6 @@ const uint8_t ST_LEFT_ALT = 0x38;
 const uint8_t ST_RIGHT_SHIFT = 0x36;
 const uint8_t ST_CAPS_LOCK = 0x3A;
 
-// Arduino Leonardo modifier key codes
-const uint8_t ARD_LEFT_CTRL = 0x80;
-const uint8_t ARD_LEFT_SHIFT = 0x81;
-const uint8_t ARD_LEFT_ALT = 0x82;
-const uint8_t ARD_RIGHT_SHIFT = 0x85;
-const uint8_t ARD_CAPS_LOCK = 0xC1;
-
-// Arduino Leonardo special key codes
-const uint8_t ARD_UP_ARROW = 0xDA;
-const uint8_t ARD_DOWN_ARROW = 0xD9;
-const uint8_t ARD_LEFT_ARROW = 0xD8;
-const uint8_t ARD_RIGHT_ARROW = 0xD7;
-const uint8_t ARD_BACKSPACE = 0xB2;
-const uint8_t ARD_TAB = 0xB3;
-const uint8_t ARD_RETURN = 0xB0;
-const uint8_t ARD_ESC = 0xB1;
-const uint8_t ARD_INSERT = 0xD1;
-const uint8_t ARD_DELETE = 0xD4;
-const uint8_t ARD_HOME = 0xD2;
-const uint8_t ARD_F1 = 0xC2;
-const uint8_t ARD_F2 = 0xC3;
-const uint8_t ARD_F3 = 0xC4;
-const uint8_t ARD_F4 = 0xC5;
-const uint8_t ARD_F5 = 0xC6;
-const uint8_t ARD_F6 = 0xC7;
-const uint8_t ARD_F7 = 0xC8;
-const uint8_t ARD_F8 = 0xC9;
-const uint8_t ARD_F9 = 0xCA;
-const uint8_t ARD_F10 = 0xCB;
-const uint8_t ARD_F11 = 0xCC;
-const uint8_t ARD_F12 = 0xCD;
-
 // Keyboard auto-repeat
 static uint8_t last_make;    // Last make char
 static unsigned long last_make_time;  // Last make time (milliseconds)
@@ -67,6 +327,8 @@ int auto_repeat_rate = 25;   // Keyboard auto-repeat rate (milliseconds)
 
 // Key scancodes
 // Use ST scancode as index to find the corresponding USB scancode.
+// https://www.usb.org/sites/default/files/documents/hut1_12v2.pdf
+// Page 53 Chapter 10 Keypad pages
 // Make-codes are single byte, with some exceptions.
 // These are escaped with a 0xe0 byte, when this appear in this table a
 // simple switch is used to look up the correct scancode.
@@ -75,130 +337,128 @@ int auto_repeat_rate = 25;   // Keyboard auto-repeat rate (milliseconds)
 uint8_t scanCodes[] =
 {
   0x00, // (Nothing)
-  ARD_ESC, // Esc
-  0x31, // 1
-  0x32, // 2
-  0x33, // 3
-  0x34, // 4
-  0x35, // 5
-  0x36, // 6
-  0x37, // 7
-  0x38, // 8
-  0x39, // 9
-  0x30, // 0
-  0x2D, // -
-  0x3D, // == (Mapped to =)
-  ARD_BACKSPACE, // Backspace
-  ARD_TAB, // Tab
-  0x71, // q
-  0x77, // w
-  0x65, // e
-  0x72, // r
-  0x74, // t
-  0x79, // y
-  0x75, // u
-  0x69, // i
-  0x6F, // o
-  0x70, // p
+  0x29, // Esc
+  0x1e, // 1
+  0x1f, // 2
+  0x20, // 3
+  0x21, // 4
+  0x22, // 5
+  0x23, // 6
+  0x24, // 7
+  0x25, // 8
+  0x26, // 9
+  0x27, // 0
+  0x2d, // °
+  0x2e, // -
+  0x2a, // Backspace
+  0x2b, // Tab
+  0x14, // a
+  0x1a, // z
+  0x08, // e
+  0x15, // r
+  0x17, // t
+  0x1c, // y
+  0x18, // u
+  0x0c, // i
+  0x12, // o
+  0x13, // p
   0x5B, // [
   0x5D, // ]
-  ARD_RETURN, // Enter
-  ARD_LEFT_CTRL, // Control
-  0x61, // a
-  0x73, // s
-  0x64, // d
-  0x66, // f
-  0x67, // g
-  0x68, // h
-  0x6A, // j
-  0x6B, // k
-  0x6C, // l
-  0x3B, // ;
-  0x27, // ' (Mapped to '")
-  0xE0, // #
-  ARD_LEFT_SHIFT, // Lshift
-  0x7E, // #~ (Mapped to ~)
-  0x7A, // z
-  0x78, // x
-  0x63, // c
-  0x76, // v
-  0x62, // b
-  0x6E, // n
-  0x6D, // m
-  0x2C, // ,
-  0x2E, // .
-  0x2F, // /
-  ARD_RIGHT_SHIFT, // Rshift
-  0x37, // (Not used)
-  ARD_LEFT_ALT, // Alternate
-  0x20, // Space
-  ARD_CAPS_LOCK, // CapsLock
-  ARD_F1, // F1
-  ARD_F2, // F2
-  ARD_F3, // F3
-  ARD_F4, // F4
-  ARD_F5, // F5
-  ARD_F6, // F6
-  ARD_F7, // F7
-  ARD_F8, // F8
-  ARD_F9, // F9
-  ARD_F10, // F10
-  0x45, // (Not used)
-  0x46, // (Not used)
-  0xE0, // Clr/Home
-  0xE0, // Up Arrow
-  0x49, // (Not used)
-  0x2D, // N-
-  0xE0, // Left Arrow
-  0x4c, // (Not used)
-  0xE0, // Right Arrow
-  0x2B, // N+
-  0x4f, // (Not used)
-  0xE0, // Down Arrow
-  0x51, // (Not used)
-  0xE0, // Insert
-  0xE0, // Delete
-  0x54, // (Not used)
-  0x55, // (Not used)
-  0x56, // (Not used)
-  0x57, // (Not used)
-  0x58, // (Not used)
-  0x59, // (Not used)
-  0x5a, // (Not used)
-  0x5b, // (Not used)
-  0x5c, // (Not used)
-  0x5d, // (Not used)
-  0x5e, // (Not used)
-  0x5f, // (Not used)
-  0x5C, // ISO Key
-  0xB2, // Undo (Mapped to Backspace)
-  ARD_F12, // Help (Mapped to F12 which is the Hatari menu key)
-  0x28, // N(
-  0x29, // N)
-  0xE0, // N/
-  0x2A, // N*
-  0x37, // N7
-  0x38, // N8
-  0x39, // N9
-  0x34, // N4
-  0x35, // N5
-  0x36, // N6
-  0x31, // N1
-  0x32, // N2
-  0x33, // N3
-  0x30, // N0
-  0x2E, // N.
-  0xE0  // NEnter
+  0x28, // Enter
+  0xe0, // Control (Left)
+  0x04, // q
+  0x16, // s
+  0x07, // d
+  0x09, // f
+  0x0a, // g
+  0x0b, // h
+  0x0d, // j
+  0x0e, // k
+  0x0f, // l
+  0x33, // m
+  0x34, // %
+  0x28, // `£ (Mapped Return)
+  0xe1, // Lshift
+  0x32, // #~
+  0x1d, // w
+  0x1b, // x
+  0x06, // c
+  0x19, // v
+  0x05, // b
+  0x11, // n
+  0x10, // ,
+  0x36, // ;
+  0x37, // :
+  0x38, // !
+  0xe5, // Rshift
+  0x00, // (Not used)
+  0xe2, // Alternate
+  0x2c, // Space
+  0x39, // CapsLock
+  0x3a, // F1
+  0x3b, // F2
+  0x3c, // F3
+  0x3d, // F4
+  0x3e, // F5
+  0x3f, // F6
+  0x40, // F7
+  0x41, // F8
+  0x42, // F9
+  0x43, // F10
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x4a, // Clr/Home
+  0x52, // Up Arrow
+  0x00, // (Not used)
+  0x56, // N-
+  0x50, // Left Arrow
+  0x00, // (Not used)
+  0x4f, // Right Arrow
+  0x57, // N+
+  0x00, // (Not used)
+  0x51, // Down Arrow
+  0x00, // (Not used)
+  0x49, // Insert
+  0x4c, // Delete
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x00, // (Not used)
+  0x31, // <> Keys
+  0x45, // Undo (Mapped to F12)
+  0x44, // Help (Mapped to F11)
+  0xb6, // N(
+  0xb7, // N)
+  0x54, // N/
+  0x55, // N*
+  0x5f, // N7
+  0x60, // N8
+  0x61, // N9
+  0x5c, // N4
+  0x5d, // N5
+  0x5e, // N6
+  0x59, // N1
+  0x5a, // N2
+  0x5b, // N3
+  0x62, // N0
+  0x63, // N.
+  0x58  // NEnter
 };
 
 void setup(void)
 {
   // Initialize keyboard:
-  Keyboard.begin();
-  
+  KeyboardUSBHID.begin();
   // Open serial port from Atari keyboard
   Serial1.begin(7812);
-
 #ifdef DEBUG
   // Open serial port to PC
   Serial.begin(9600);
@@ -261,10 +521,8 @@ void process_keypress(uint8_t key)
 // Convert from ST scancode to PC scancode
 void convert_scancode(uint8_t key)
 {
-  
   uint8_t break_code = key & 0x80;
   uint8_t pc_code = scanCodes[key & 0x7f];
-  uint8_t escaped = (pc_code == 0xe0 ? true:false);
   
 #ifdef DEBUG
     Serial.print("Atari scancode: ");
@@ -273,65 +531,20 @@ void convert_scancode(uint8_t key)
     Serial.println(pc_code, DEC);
     Serial.print("Break code: ");
     Serial.println(break_code, DEC);
-    Serial.print("Escaped: ");
-    Serial.println(escaped, DEC);
 #endif
   
   // Handle modifier key presses
   if (process_modifier(key)) return;
 
-  // Special handling required for escaped keypresses
-  if (escaped)
-  {
-    switch (key & 0x7f)
-    {
-      case 0x48: // Up arrow
-        send_escaped_key(ARD_UP_ARROW);
-        break;
-      case 0x4b: // Left arrow
-        send_escaped_key(ARD_LEFT_ARROW);
-        break;
-      case 0x4d: // Right arrow
-        send_escaped_key(ARD_RIGHT_ARROW);
-        break;
-      case 0x50: // Down arrow
-        send_escaped_key(ARD_DOWN_ARROW);
-        break;
-      case 0x52: // Insert
-        send_escaped_key(ARD_INSERT);
-        break;
-      case 0x53: // Delete
-        send_escaped_key(ARD_DELETE);
-        break;
-      case 0x47: // Clr/Home
-        send_escaped_key(ARD_HOME);
-        break;
-      case 0x65: // Num /
-        send_escaped_key(0x2F);
-        break;
-      case 0x72: // Num Enter
-        send_escaped_key(ARD_RETURN);
-        break;
-      case 0x2b: // Tilde
-        send_escaped_key(0x23);
-        break;
-      case 0x62: // Help
-        send_escaped_key(ARD_F1);
-        break;
-    }
-  }
-  else
-  {
-    Keyboard.write(pc_code);
-  }
+  KeyboardUSBHID.write(pc_code);
 }
 
 // Send code for escaped Atari keypresses
 void send_escaped_key(uint8_t key)
 {
-  Keyboard.press(key);
+  KeyboardUSBHID.press(key);
   delay(20);
-  Keyboard.release(key); 
+  KeyboardUSBHID.release(key); 
 }
 
 // Process modifier keypresses
@@ -341,19 +554,11 @@ boolean process_modifier(uint8_t key)
   switch (key)
     {
       case ST_LEFT_CTRL:
-        Keyboard.press(ARD_LEFT_CTRL);
-        return true;
       case ST_LEFT_SHIFT:
-        Keyboard.press(ARD_LEFT_SHIFT);
-        return true;
       case ST_LEFT_ALT:
-        Keyboard.press(ARD_LEFT_ALT);
-        return true;
       case ST_RIGHT_SHIFT:
-        Keyboard.press(ARD_RIGHT_SHIFT);
-        return true;        
       case ST_CAPS_LOCK:
-        Keyboard.press(ARD_CAPS_LOCK);
+        KeyboardUSBHID.press(key);
         return true;
     }
 
@@ -361,23 +566,15 @@ boolean process_modifier(uint8_t key)
   switch (key & 0x7f)
     {
       case ST_LEFT_CTRL:
-        Keyboard.release(ARD_LEFT_CTRL);
-        return true;
       case ST_LEFT_SHIFT:
-        Keyboard.release(ARD_LEFT_SHIFT);
-        return true;
       case ST_LEFT_ALT:
-        Keyboard.release(ARD_LEFT_ALT);
-        return true;
       case ST_RIGHT_SHIFT:
-        Keyboard.release(ARD_RIGHT_SHIFT);
-        return true;        
       case ST_CAPS_LOCK:
-        Keyboard.release(ARD_CAPS_LOCK);
+        KeyboardUSBHID.release(key);
         return true;
     }
   
-  return false;  
+  return false;
 }
 
 // Keyboard auto repeat
@@ -412,6 +609,5 @@ void auto_repeat(void)
   {
     last_repeat = millis();
     convert_scancode(last_make);
-  }  
+  }
 }
-
