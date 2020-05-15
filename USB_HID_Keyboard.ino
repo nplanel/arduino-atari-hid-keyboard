@@ -453,7 +453,7 @@ uint8_t scanCodes[] =
   0x5b, // N3
   0x62, // N0
   0x63, // N.
-  0x58  // NEnter
+  0x28  // NEnter
 };
 
 void setup(void)
