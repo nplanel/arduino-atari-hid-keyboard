@@ -553,6 +553,7 @@ void send_escaped_key(uint8_t key)
 // Process modifier keypresses
 boolean process_modifier(uint8_t key)
 {
+  uint8_t pc_code = scanCodes[key & 0x7f];
   // Modifier key press  
   switch (key)
     {
@@ -561,7 +562,7 @@ boolean process_modifier(uint8_t key)
       case ST_LEFT_ALT:
       case ST_RIGHT_SHIFT:
       case ST_CAPS_LOCK:
-        KeyboardUSBHID.press(key);
+        KeyboardUSBHID.press(pc_code);
         return true;
     }
 
@@ -573,7 +574,7 @@ boolean process_modifier(uint8_t key)
       case ST_LEFT_ALT:
       case ST_RIGHT_SHIFT:
       case ST_CAPS_LOCK:
-        KeyboardUSBHID.release(key);
+        KeyboardUSBHID.release(pc_code);
         return true;
     }
   
