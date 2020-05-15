@@ -365,8 +365,8 @@ uint8_t scanCodes[] =
   0x0c, // i
   0x12, // o
   0x13, // p
-  0x5B, // [
-  0x5D, // ]
+  0x2f, // fr:^ us: [
+  0x30, // fr:$ us: ]
   0x28, // Enter
   0xe0, // Control (Left)
   0x04, // q
