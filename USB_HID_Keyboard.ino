@@ -9,6 +9,8 @@ public:
   KeyboardUSBHID_(void);
   void begin(void);
   void end(void);
+  size_t write(uint8_t k);
+  size_t write(const uint8_t *buffer, size_t size);
   size_t press(uint8_t k);
   size_t release(uint8_t k);
   void releaseAll(void);
@@ -292,13 +294,14 @@ void KeyboardUSBHID_::releaseAll(void)
 
 size_t KeyboardUSBHID_::write(uint8_t c)
 {
-  // unimplemented
-  return 0;
+  uint8_t p = press(c);  // Keydown
+  release(c);            // Keyup
+  return p;              // just return the result of press() since release() almost always returns 1
 }
 
 size_t KeyboardUSBHID_::write(const uint8_t *buffer, size_t size) {
   // unimplemented
-  return 0;
+  return size;
 }
 
 KeyboardUSBHID_ KeyboardUSBHID;
