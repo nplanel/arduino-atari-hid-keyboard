@@ -59,8 +59,10 @@ static const uint8_t _hidReportDescriptor[] PROGMEM = {
 
 KeyboardUSBHID_::KeyboardUSBHID_(void) 
 {
-  static HIDSubDescriptor node(_hidReportDescriptor, sizeof(_hidReportDescriptor));
-  HID().AppendDescriptor(&node);
+// original Keyboard already instanciate this
+//
+//  static HIDSubDescriptor node(_hidReportDescriptor, sizeof(_hidReportDescriptor));
+//  HID().AppendDescriptor(&node);
 }
 
 void KeyboardUSBHID_::begin(void)
