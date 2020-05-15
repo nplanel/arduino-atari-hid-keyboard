@@ -435,7 +435,7 @@ uint8_t scanCodes[] =
   0x00, // (Not used)
   0x00, // (Not used)
   0x00, // (Not used)
-  0x31, // <> Keys
+  0x64, // <> Keys
   0x45, // Undo (Mapped to F12)
   0x44, // Help (Mapped to F11)
   0x22, // N( Mapped to 5
