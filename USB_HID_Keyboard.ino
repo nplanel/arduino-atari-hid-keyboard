@@ -438,8 +438,8 @@ uint8_t scanCodes[] =
   0x31, // <> Keys
   0x45, // Undo (Mapped to F12)
   0x44, // Help (Mapped to F11)
-  0xb6, // N(
-  0xb7, // N)
+  0x22, // N( Mapped to 5
+  0x2d, // N) Mapped to °
   0x54, // N/
   0x55, // N*
   0x5f, // N7
